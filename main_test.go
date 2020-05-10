@@ -38,18 +38,18 @@ func TestParallel(t *testing.T) {
 
 	// Trying to achive race condition when counter is not atomic
 	countInit := get_visitors_count(t)
-	for i := 0; i < 4; i++ {
+	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		go func() {
 			for c := 0; c < 100; c++ {
-				request_page(t)
+				dummy_request(t)
 			}
 			wg.Done()
 		}()
 	}
 	wg.Wait()
 	countFinal := get_visitors_count(t)
-	if countInit + 401 != countFinal {
+	if countInit + 1001 != countFinal {
 		t.Fatalf("Invalid visitors count increment: %d -> %d", countInit, countFinal)
 	}
 }
@@ -65,10 +65,15 @@ func request_page(t *testing.T) (*http.Response) {
 	return resp  
 }
 
+func dummy_request(t *testing.T) {
+	resp := request_page(t)
+	resp.Body.Close()
+}
+
 func get_visitors_count(t *testing.T) (int) {
 	resp := request_page(t) 
-	defer resp.Body.Close()
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	resp.Body.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
